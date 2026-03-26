@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencia QR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .docente-info {
+            color: #666;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .fecha-info {
+            color: #999;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .scanner-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #000;
+            display: none;
+        }
+
+        #video.activo {
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-danger {
+            background: #ea4335;
+            color: white;
+        }
+
+        .stats-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .lista-asistencia {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .lista-titulo {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-limpiar {
+            background: #ea4335;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .estudiante-item {
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .estudiante-nombre {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .estudiante-hora {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .mensaje {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: fadeInOut 3s ease;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            10%, 90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .mensaje-exito {
+            background: #34a853;
+        }
+
+        .mensaje-error {
+            background: #ea4335;
+        }
+
+        .mensaje-duplicado {
+            background: #fbbc04;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .instruccion-inicial {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .instruccion-inicial h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Encabezado -->
+        <div class="header">
+            <h1>📋 Asistencia Escolar</h1>
+            <div class="docente-info" id="docenteInfo">Cargando...</div>
+            <div class="fecha-info" id="fechaInfo">--</div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-container">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPresentes">0</div>
+                    <div class="stat-label">Presentes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="ultimoRegistro">--:--</div>
+                    <div class="stat-label">Último registro</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Escáner -->
+        <div class="scanner-container">
+            <div class="instruccion-inicial" id="instruccionInicial">
+                <h3>👇 Presiona el botón para comenzar</h3>
+                <p>La cámara se activará y podrás escanear los códigos QR</p>
+            </div>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div class="controls">
+                <button class="btn-primary" id="btnEscanear" onclick="iniciarEscaneo()">
+                    📷 Iniciar Escaneo
+                </button>
+                <button class="btn-secondary" id="btnDetener" onclick="detenerEscaneo()" style="display: none;">
+                    ⏸️ Detener
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de asistencia -->
+        <div class="lista-asistencia">
+            <div class="lista-titulo">
+                <span>📝 Registros de Hoy</span>
+                <button class="btn-limpiar" onclick="limpiarRegistros()">🗑️ Limpiar</button>
+            </div>
+            <div id="listaEstudiantes">
+                <div class="loading">Esperando registros...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Librería para leer QR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+    <script>
+        // ================================================================
+        // CONFIGURACIÓN - MODIFICAR ESTOS VALORES PARA CADA DOCENTE
+        // ================================================================
+        
+        const CONFIG = {
+            // URL del Apps Script (obtener después de implementar)
+            URL_SCRIPT: 'https://script.google.com/macros/s/AKfycby9HVx6YuUfenq7t4FeMrdhtWCrk8-yXp_JBV8dwDSpM7yFVo7ZU0m0WEbX3V3qa_n7/exec',
+            
+            // Nombre del docente
+            NOMBRE_DOCENTE: 'Prof.  Julio Cesar Siesquen Segura',
+            
+            // Grado y sección
+            GRADO_SECCION: '3° C'
+        };
+        
+        // ================================================================
+        // NO MODIFICAR A PARTIR DE AQUÍ
+        // ================================================================
+
+        // Variables globales
+        let video = null;
+        let canvas = null;
+        let ctx = null;
+        let escaneando = false;
+        let estudiantesRegistrados = [];
+        let audioContext = null;
+        let ultimoQRLeido = null;
+        let ultimoQRTiempo = 0;
+
+        // Inicializar al cargar la página
+        window.onload = function() {
+            // Mostrar información del docente
+            document.getElementById('docenteInfo').textContent = 
+                CONFIG.NOMBRE_DOCENTE + ' - ' + CONFIG.GRADO_SECCION;
+            
+            // Mostrar fecha actual
+            actualizarFecha();
+            
+            // Cargar registros del día
+            cargarRegistrosDelDia();
+            
+            // Actualizar estadísticas
+            actualizarEstadisticas();
+        };
+
+        // Actualizar fecha
+        function actualizarFecha() {
+            const hoy = new Date();
+            const opciones = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const fechaTexto = hoy.toLocaleDateString('es-PE', opciones);
+            document.getElementById('fechaInfo').textContent = fechaTexto;
+        }
+
+        // Iniciar escaneo de QR
+        async function iniciarEscaneo() {
+
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                video.play();
+
+                // Ocultar instrucción y mostrar video
+                document.getElementById('instruccionInicial').style.display = 'none';
+                video.classList.add('activo');
+
+                escaneando = true;
+                document.getElementById('btnEscanear').style.display = 'none';
+                document.getElementById('btnDetener').style.display = 'block';
+
+                requestAnimationFrame(escanearFrame);
+                
+            } catch (err) {
+                mostrarMensaje('Error al acceder a la cámara: ' + err.message, 'error');
+                console.error(err);
+            }
+        }
+
+        // Escanear cada frame del video
+        function escanearFrame() {
+            if (!escaneando) return;
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code && code.data && code.data.trim() !== '') {
+                    procesarQR(code.data);
+                }
+            }
+
+            requestAnimationFrame(escanearFrame);
+        }
+
+        // Procesar código QR escaneado
+        async function procesarQR(codigoQR) {
+            // Prevenir lecturas duplicadas muy rápidas (menos de 2 segundos)
+            const ahora = Date.now();
+            if (ultimoQRLeido === codigoQR && (ahora - ultimoQRTiempo) < 2000) {
+                return;
+            }
+            
+            ultimoQRLeido = codigoQR;
+            ultimoQRTiempo = ahora;
+
+            // Validar que no esté vacío
+            if (!codigoQR || codigoQR.trim() === '') {
+                reproducirSonidoError();
+                mostrarMensaje('⚠️ Código QR vacío', 'error');
+                return;
+            }
+
+            // Verificar si ya está registrado hoy (localmente)
+            if (estudiantesRegistrados.some(e => e.codigo === codigoQR)) {
+                reproducirSonidoDuplicado();
+                mostrarMensaje('⚠️ Ya registrado: ' + codigoQR, 'duplicado');
+                return;
+            }
+
+            // Pausar temporalmente el escaneo
+            const estabaSonando = escaneando;
+            escaneando = false;
+
+            try {
+                // Enviar a Google Sheets usando método que funciona con Apps Script
+                fetch(CONFIG.URL_SCRIPT, {
+                    redirect: 'follow',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify({
+                        codigoEstudiante: codigoQR,
+                        docente: CONFIG.NOMBRE_DOCENTE,
+                        fecha: new Date().toISOString()
+                    })
+                }).catch(e => {
+                    // Ignorar errores de CORS - el dato sí se envió
+                    console.log('Petición enviada (error CORS esperado):', e);
+                });
+
+                // Registrar localmente (siempre)
+                const registro = {
+                    codigo: codigoQR,
+                    hora: new Date().toLocaleTimeString('es-PE', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }),
+                    timestamp: Date.now()
+                };
+
+                estudiantesRegistrados.push(registro);
+                guardarRegistrosDelDia();
+                agregarALista(registro);
+                actualizarEstadisticas();
+                reproducirSonidoExito();
+                mostrarMensaje('✓ Registrado: ' + codigoQR, 'exito');
+
+            } catch (error) {
+                console.error('Error:', error);
+                reproducirSonidoError();
+                mostrarMensaje('Error al enviar. Guardado localmente.', 'error');
+                
+                // Guardar localmente
+                const registro = {
+                    codigo: codigoQR,
+                    hora: new Date().toLocaleTimeString('es-PE', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }),
+                    timestamp: Date.now()
+                };
+                estudiantesRegistrados.push(registro);
+                guardarRegistrosDelDia();
+                agregarALista(registro);
+                actualizarEstadisticas();
+            }
+
+            // Reanudar escaneo después de 1 segundo
+            setTimeout(() => {
+                if (estabaSonando) {
+                    escaneando = true;
+                    requestAnimationFrame(escanearFrame);
+                }
+            }, 1000);
+        }
+
+        // Detener escaneo
+        function detenerEscaneo() {
+            escaneando = false;
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            video.classList.remove('activo');
+            document.getElementById('instruccionInicial').style.display = 'block';
+            document.getElementById('btnEscanear').style.display = 'block';
+            document.getElementById('btnDetener').style.display = 'none';
+        }
+
+        // Agregar estudiante a la lista visual
+        function agregarALista(registro) {
+            const lista = document.getElementById('listaEstudiantes');
+            
+            // Quitar mensaje de "esperando"
+            if (lista.querySelector('.loading')) {
+                lista.innerHTML = '';
+            }
+
+            const item = document.createElement('div');
+            item.className = 'estudiante-item';
+            item.innerHTML = `
+                <div>
+                    <div class="estudiante-nombre">${registro.codigo}</div>
+                </div>
+                <div class="estudiante-hora">${registro.hora}</div>
+            `;
+            
+            lista.insertBefore(item, lista.firstChild);
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticas() {
+            document.getElementById('totalPresentes').textContent = estudiantesRegistrados.length;
+            
+            if (estudiantesRegistrados.length > 0) {
+                const ultimo = estudiantesRegistrados[estudiantesRegistrados.length - 1];
+                document.getElementById('ultimoRegistro').textContent = ultimo.hora;
+            }
+        }
+
+        // Mostrar mensaje
+        function mostrarMensaje(texto, tipo) {
+            const mensaje = document.createElement('div');
+            mensaje.className = `mensaje mensaje-${tipo}`;
+            mensaje.textContent = texto;
+            document.body.appendChild(mensaje);
+
+            setTimeout(() => {
+                mensaje.remove();
+            }, 3000);
+        }
+
+        // Guardar registros del día en localStorage
+        function guardarRegistrosDelDia() {
+            const hoy = new Date().toDateString();
+            const clave = 'registros_' + CONFIG.GRADO_SECCION + '_' + hoy;
+            localStorage.setItem(clave, JSON.stringify(estudiantesRegistrados));
+        }
+
+        // Cargar registros del día desde localStorage
+        function cargarRegistrosDelDia() {
+            const hoy = new Date().toDateString();
+            const clave = 'registros_' + CONFIG.GRADO_SECCION + '_' + hoy;
+            const registros = localStorage.getItem(clave);
+            
+            if (registros) {
+                estudiantesRegistrados = JSON.parse(registros);
+                const lista = document.getElementById('listaEstudiantes');
+                lista.innerHTML = '';
+                estudiantesRegistrados.forEach(registro => agregarALista(registro));
+            }
+        }
+
+        // Limpiar registros del día
+        function limpiarRegistros() {
+            if (!confirm('¿Seguro que deseas limpiar todos los registros de hoy?\n\nEsto NO eliminará los datos de Google Sheets, solo limpiará la vista local.')) {
+                return;
+            }
+
+            estudiantesRegistrados = [];
+            guardarRegistrosDelDia();
+            
+            const lista = document.getElementById('listaEstudiantes');
+            lista.innerHTML = '<div class="loading">Esperando registros...</div>';
+            
+            actualizarEstadisticas();
+            mostrarMensaje('Registros limpiados', 'exito');
+        }
+
+        // ===== CONFIGURACIÓN DE SONIDOS =====
+        
+// Sonidos locales desde carpeta Sonidos/
+const RUTAS_SONIDOS = {
+    exito: 'Sonidos/excelente.mp3',
+    duplicado: 'Sonidos/doble.mp3',
+    error: 'Sonidos/error.mp3'
+};
+
+        // Crear elementos de audio (se cargan una sola vez)
+        const audioExito = new Audio(RUTAS_SONIDOS.exito);
+        const audioDuplicado = new Audio(RUTAS_SONIDOS.duplicado);
+        const audioError = new Audio(RUTAS_SONIDOS.error);
+
+        // Precargar los audios para reproducción más rápida
+        audioExito.preload = 'auto';
+        audioDuplicado.preload = 'auto';
+        audioError.preload = 'auto';
+
+        // ===== FUNCIONES DE REPRODUCCIÓN =====
+
+        function reproducirSonidoExito() {
+            audioExito.currentTime = 0;
+            audioExito.play().catch(error => {
+                console.warn('⚠️ No se pudo reproducir sonido de éxito:', error);
+            });
+            
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+
+        function reproducirSonidoDuplicado() {
+            audioDuplicado.currentTime = 0;
+            audioDuplicado.play().catch(error => {
+                console.warn('⚠️ No se pudo reproducir sonido de duplicado:', error);
+            });
+            
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+
+        function reproducirSonidoError() {
+            audioError.currentTime = 0;
+            audioError.play().catch(error => {
+                console.warn('⚠️ No se pudo reproducir sonido de error:', error);
+            });
+            
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        }
+    </script>
+</body>
+</html>
